@@ -16,17 +16,19 @@ auto Trie::Get(std::string_view key) const -> const T * {
   // dynamic_cast returns `nullptr`, it means the type of the value is mismatched, and you should return nullptr.
   // Otherwise, return the value.
   auto node = root_;
-  for (auto c : key) {
-    if (node->children_.find(c) == node->children_.end()) {
-      return nullptr;
-    }
-    node = node->children_.at(c);
+  std::size_t idx = 0;
+  for (; idx < key.size() && node; idx++) {
+    char ch = key[idx];
+    node = node->children_.find(ch) == node->children_.end() ? nullptr : node->children_.at(ch);
   }
-  auto value_node = dynamic_cast<const TrieNodeWithValue<T> *>(node.get());
-  if (value_node == nullptr) {
+  if (idx != key.size() || node == nullptr || !node->is_value_node_) {
     return nullptr;
   }
-  return value_node->value_.get();
+  const auto *leaf = dynamic_cast<const TrieNodeWithValue<T> *>(node.get());
+  if (leaf == nullptr) {
+    return nullptr;
+  }
+  return leaf->value_.get();
 }
 
 template <class T>
